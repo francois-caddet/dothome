@@ -14,7 +14,12 @@
   outputs = { nixpkgs, home-manager, nixneovim, ... }:
     let
       system = "x86_64-linux";
-      pkgs = nixpkgs.legacyPackages.${system};
+      pkgs = import nixpkgs {
+        inherit system;
+        overlays = [
+          nixneovim.overlays.default
+        ];
+      };
     in {
       homeConfigurations = {
         "fcaddet" = home-manager.lib.homeManagerConfiguration {
