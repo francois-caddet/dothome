@@ -1,23 +1,42 @@
-{ pkgs, nixneovim, ... }:
+{ pkgs, ... }:
 
 {
-  imports = [
-    nixneovim.nixosModules.default
-  ];
+#  imports = [
+#    nixneovim.nixosModules.default
+#  ];
 
-  programs.nixneovim = {
+  programs.nixvim = {
     enable = true;
     defaultEditor = true;
     viAlias = true;
     vimAlias = true;
+    vimdiffAlias = true;
+    diagnostic.settings = {
+      virtual_text = true;
+    };
 
     extraPackages = with pkgs; [
       yarn
       nodejs
+      python3
     ];
 
     # usePluginDefaults = true;
     plugins = {
+      mini.enable = true;
+
+      # Icons
+      mini.modules.icons = {};
+      mini.mockDevIcons = true;
+# cmp
+#blink-cmp.enable = true;
+mini.modules.completion = {};
+      mini.modules.snippets = {
+        snippets = [
+          "gen_loader.from_lang()"
+        ];
+      };
+
       # display possible keys
       which-key.enable = true;
 
@@ -39,11 +58,8 @@
       # or maybe thisone?
       #gitsigns.enable = true;
 
-      # autoclose unedited buffs
-      hbac.enable = true;
-
       # manage budgets and transacions with hledger
-      ledger.enable = true;
+      #ledger.enable = true;
 
       telescope.enable = true;
 
@@ -53,50 +69,45 @@
       trouble.enable = true;
     };
     plugins.lsp-signature.enable = true;
-    plugins.lspkind.enable = true;
-    # plugins.lspsiga.enable = true;
-    plugins.lspconfig.servers = {
+    #plugins.lspkind.enable = true;
+    # Buggy with screenreader:
+     #plugins.lspsaga.enable = true;
+
+    plugins.lsp.enable = true;
+    plugins.lsp.servers = {
       bashls.enable = true;
       clangd.enable = true;
       ltex.enable = true;
-      nil.enable = true;
+      nixd = {
+        enable = true;
+        settings.formatting.command = [ "nixpkgs-fmt" ];
+      };
       pyright.enable = true;
-      rust-analyzer.enable = true;
+      #rust_analyzer.enable = true;
       texlab.enable = true;
       gopls.enable = true;
+      elixirls.enable = true;
     };
     plugins.treesitter = {
       enable = true;
-      indent = true;
-      installAllGrammars = true;
+      settings.indent.enable = true;
+      settings.auto_install = true;
     };
-    plugins.nvim-cmp = {
-      enable = true;
-      snippet.luasnip.enable = true;
-
-      sources = {
-        treesitter.enable = true;
-        nvim_lsp.enable = true;
-        luasnip.enable = true;
-      };
-      mappingPresets = [ "insert" "cmdline" ];
-    };
+      plugins.luasnip.enable = true;
 
     # debug
-    plugins.nvim-dap = {
+    plugins.dap = {
       enable = true;
     };
-    plugins.nvim-dap-ui.enable = true;
+    plugins.dap-ui.enable = true;
+    plugins.dap-virtual-text.enable = true;
 
     # rust
-    plugins.rust-tools = {
+    plugins.rustaceanvim = {
       enable = true;
     };
 
     # file manager
     plugins.oil.enable = true;
-    plugins.project-nvim = {
-      enable = true;
-    };
   };
 }

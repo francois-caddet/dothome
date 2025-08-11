@@ -5,6 +5,8 @@ let
     pick = buildPythonPackage rec {
       pname = "pick";
       version = "1.6.0";
+      pyproject = true;
+      build-system = [ setuptools poetry-core ];
       src = fetchPypi {
         inherit pname version;
         sha256 = "sha256-Kv1GyJtQIxHTuDHs7hoA6Kv4kq1elubLr5PxcrKa4cU=";
@@ -17,6 +19,8 @@ let
     buildPythonPackage rec {
       pname = "qobuz-dl";
       version = "0.9.9.10";
+      pyproject = true;
+      build-system = [ setuptools ];
       src = fetchPypi {
         inherit pname version;
         sha256 = "sha256-q7TUl3scg+isoLB0xJvJLCtvJU7O+ogMlftt0O73qb4=";
@@ -48,6 +52,19 @@ in
       lieer.sync.enable = true;
     };
 
+    programs.vscode = {
+      enable = true;
+      package = pkgs.vscodium;
+      profiles.default.extensions = with pkgs.vscode-marketplace-release; with pkgs.vscode-marketplace; with pkgs.open-vsx-release; with pkgs.open-vsx; [
+        rust-lang.rust-analyzer
+        masterustacean.cargo-runner
+        vscodevim.vim
+        mkhl.direnv
+        arrterian.nix-env-selector
+        continue.continue
+      ];
+    };
+
     programs.thunderbird.enable = true;
     programs.thunderbird.profiles.default.isDefault = true;
     programs.notmuch.enable = true;
@@ -58,6 +75,7 @@ in
     authenticator
     rustfmt
     cargo
+    rust-analyzer
     cachix
     libreoffice
     vimpc
@@ -67,7 +85,7 @@ in
 
   programs.firefox = {
     enable = true;
-    package = pkgs.firefox-wayland;
+    package = pkgs.firefox;
   };
 
   programs.texlive.enable = true;
@@ -121,6 +139,7 @@ in
   };
 
   home.sessionVariables.GTK_THEME = "palenight";
+  home.sessionVariables.QT_QPA_PLATFORM = "wayland";
 
   dconf.settings = {
     "org/gnome/desktop/interface" = {
