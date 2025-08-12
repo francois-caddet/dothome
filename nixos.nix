@@ -73,6 +73,7 @@ in
   # Installed packages
   home.packages = with pkgs; [
     authenticator
+    rustc
     rustfmt
     cargo
     rust-analyzer

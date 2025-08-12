@@ -53,6 +53,7 @@ homeConfigurations.f_caddet = inputs.home-manager.lib.homeManagerConfiguration {
           };
       modules = [ 
             config.flake.homeModules.fcaddet
+            ./cybee.nix
             {
           home.username = "f_caddet";
             }

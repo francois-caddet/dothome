@@ -15,6 +15,11 @@
       virtual_text = true;
     };
 
+    extraPlugins = with pkgs.vimPlugins; [
+      mini-completion
+        mini-snippets
+        ];
+
     extraPackages = with pkgs; [
       yarn
       nodejs
@@ -24,13 +29,16 @@
     # usePluginDefaults = true;
     plugins = {
       mini.enable = true;
+      mini-keymap.enable = true;
+      mini-keymap.luaConfig.content = builtins.readFile ./nvim/keys.lua;
 
       # Icons
       mini.modules.icons = {};
       mini.mockDevIcons = true;
 # cmp
 #blink-cmp.enable = true;
-mini.modules.completion = {};
+      mini-pairs.enable = true;
+      mini.modules.completion = {};
       mini.modules.snippets = {
         snippets = [
           "gen_loader.from_lang()"
@@ -82,7 +90,8 @@ mini.modules.completion = {};
         enable = true;
         settings.formatting.command = [ "nixpkgs-fmt" ];
       };
-      pyright.enable = true;
+      #basedpyright.enable = true;
+      pylsp.enable = true;
       #rust_analyzer.enable = true;
       texlab.enable = true;
       gopls.enable = true;
@@ -95,6 +104,16 @@ mini.modules.completion = {};
     };
       plugins.luasnip.enable = true;
 
+    # testing
+    plugins.neotest = {
+      enable = true;
+      adapters = {
+        bash.enable = true;
+        rust.enable = true;
+        python.enable = true;
+        elixir.enable = true;
+      };
+    };
     # debug
     plugins.dap = {
       enable = true;
