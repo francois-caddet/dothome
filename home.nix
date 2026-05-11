@@ -7,6 +7,38 @@
     homeDirectory = "/home/${config.home.username}";
   };
 
+    programs.vscode = {
+      enable = true;
+      package = pkgs.vscodium;
+      profiles.default.extensions = with pkgs.vscode-marketplace-release; with pkgs.vscode-marketplace; with pkgs.open-vsx-release; with pkgs.open-vsx; [
+        rust-lang.rust-analyzer
+        masterustacean.cargo-runner
+        vscodevim.vim
+        mkhl.direnv
+        arrterian.nix-env-selector
+        continue.continue
+      ];
+    };
+
+    programs.thunderbird.enable = true;
+    programs.thunderbird.profiles.default.isDefault = true;
+
+  programs.firefox = {
+    enable = true;
+    package = pkgs.firefox;
+  };
+
+  programs.direnv.enable = true;
+  programs.direnv.nix-direnv.enable = true;
+
+  programs.starship = {
+    enable = true;
+  };
+
+  programs.atuin = {
+    enable = true;
+  };
+
   # This value determines the Home Manager release that your configuration is
   # compatible with. This helps avoid breakage when a new Home Manager release
   # introduces backwards incompatible changes.

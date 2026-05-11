@@ -31,7 +31,6 @@
           ./home.nix
     inputs.nixvim.homeModules.nixvim
     ./nvim.nix
-    ./nixos.nix
   ];
         };
 homeConfigurations.fcaddet = inputs.home-manager.lib.homeManagerConfiguration {

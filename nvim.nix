@@ -95,7 +95,6 @@
       #rust_analyzer.enable = true;
       texlab.enable = true;
       gopls.enable = true;
-      elixirls.enable = true;
     };
     plugins.treesitter = {
       enable = true;

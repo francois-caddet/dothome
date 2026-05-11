@@ -52,21 +52,6 @@ in
       lieer.sync.enable = true;
     };
 
-    programs.vscode = {
-      enable = true;
-      package = pkgs.vscodium;
-      profiles.default.extensions = with pkgs.vscode-marketplace-release; with pkgs.vscode-marketplace; with pkgs.open-vsx-release; with pkgs.open-vsx; [
-        rust-lang.rust-analyzer
-        masterustacean.cargo-runner
-        vscodevim.vim
-        mkhl.direnv
-        arrterian.nix-env-selector
-        continue.continue
-      ];
-    };
-
-    programs.thunderbird.enable = true;
-    programs.thunderbird.profiles.default.isDefault = true;
     programs.notmuch.enable = true;
     programs.lieer.enable = true;
 
@@ -84,26 +69,16 @@ in
     (python3.withPackages my-python-packages)
   ];
 
-  programs.firefox = {
-    enable = true;
-    package = pkgs.firefox;
-  };
-
   programs.texlive.enable = true;
   programs.pandoc.enable = true;
 
   programs.zsh.enable = true;
 
-  programs.direnv.enable = true;
-  programs.direnv.nix-direnv.enable = true;
-
   programs.starship = {
-    enable = true;
     enableZshIntegration = true;
   };
 
   programs.atuin = {
-    enable = true;
     enableZshIntegration = true;
   };
 
@@ -147,8 +122,4 @@ in
       color-scheme = "prefer-dark";
     };
   };
-
-  programs.home-manager.enable = true;
-
-  home.stateVersion = "23.05";
 }
