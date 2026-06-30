@@ -33,6 +33,11 @@
     ./nvim.nix
   ];
         };
+        homeModules.fcaddetNixOS = {
+        imports = [
+    ./nixos.nix
+  ];
+        };
 homeConfigurations.fcaddet = inputs.home-manager.lib.homeManagerConfiguration {
           pkgs = import inputs.nixpkgs {
             system = "x86_64-linux";
