@@ -5,7 +5,6 @@
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     home-manager.url = "github:nix-community/home-manager";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
-    nixos-hardware.url = "github:NixOS/nixos-hardware/master";
     nixvim.url = "github:nix-community/nixvim";
     nixvim.inputs.nixpkgs.follows = "nixpkgs";
     vscode-extensions.url = "github:nix-community/nix-vscode-extensions";
