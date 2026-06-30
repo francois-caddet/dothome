@@ -64,8 +64,7 @@ in
     rust-analyzer
     cachix
     libreoffice
-    vimpc
-    whatsapp-for-linux
+    karere
     (python3.withPackages my-python-packages)
   ];
 
