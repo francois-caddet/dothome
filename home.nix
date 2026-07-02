@@ -7,9 +7,8 @@
     homeDirectory = "/home/${config.home.username}";
   };
 
-    programs.vscode = {
+    programs.vscodium = {
       enable = true;
-      package = pkgs.vscodium;
       profiles.default.extensions = with pkgs.vscode-marketplace-release; with pkgs.vscode-marketplace; with pkgs.open-vsx-release; with pkgs.open-vsx; [
         rust-lang.rust-analyzer
         masterustacean.cargo-runner
