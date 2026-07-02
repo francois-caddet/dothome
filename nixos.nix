@@ -90,7 +90,7 @@ in
       package = pkgs.papirus-icon-theme;
     };
 
-    theme = {
+    gtk4.theme = {
       name = "palenight";
       package = pkgs.palenight-theme;
     };
