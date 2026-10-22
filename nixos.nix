@@ -120,5 +120,10 @@ in
     "org/gnome/desktop/interface" = {
       color-scheme = "prefer-dark";
     };
+    # GNOME starts orca.service whenever this is on; no systemctl enable link needed (on NixOS that link pins the
+    # Orca build of the day it was made).
+    "org/gnome/desktop/a11y/applications" = {
+      screen-reader-enabled = true;
+    };
   };
 }
