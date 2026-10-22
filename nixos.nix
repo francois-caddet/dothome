@@ -126,4 +126,14 @@ in
       screen-reader-enabled = true;
     };
   };
+
+  # Turn the screen reader back on at every login; Super+Alt+S still switches it off for the rest of a session.
+  systemd.user.services.screen-reader-on-at-login = {
+    Unit.Description = "Turn the screen reader back on at each login";
+    Service = {
+      Type = "oneshot";
+      ExecStart = "${pkgs.dconf}/bin/dconf write /org/gnome/desktop/a11y/applications/screen-reader-enabled true";
+    };
+    Install.WantedBy = [ "graphical-session-pre.target" ];
+  };
 }
