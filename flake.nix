@@ -29,6 +29,7 @@
           ./home.nix
     inputs.nixvim.homeModules.nixvim
     ./nvim.nix
+    ./screen-reader.nix
   ];
         };
         homeModules.fcaddetNixOS = {

@@ -1,4 +1,4 @@
-{ pkgs, lib, ... }:
+{ pkgs, ... }:
 
 let
   my-python-packages = ps: with ps; let
@@ -120,29 +120,5 @@ in
     "org/gnome/desktop/interface" = {
       color-scheme = "prefer-dark";
     };
-    # GNOME starts orca.service whenever this is on; no systemctl enable link needed (on NixOS that link pins the
-    # Orca build of the day it was made).
-    "org/gnome/desktop/a11y/applications" = {
-      screen-reader-enabled = true;
-    };
   };
-
-  # Turn the screen reader back on at every login; Super+Alt+S still switches it off for the rest of a session.
-  systemd.user.services.screen-reader-on-at-login = {
-    Unit.Description = "Turn the screen reader back on at each login";
-    Service = {
-      Type = "oneshot";
-      ExecStart = "${pkgs.dconf}/bin/dconf write /org/gnome/desktop/a11y/applications/screen-reader-enabled true";
-    };
-    Install.WantedBy = [ "graphical-session-pre.target" ];
-  };
-
-  # GNOME (gsd-a11y-settings) enables orca.service through systemd each time it turns the screen reader on. On NixOS that
-  # links ~/.config/systemd/user/orca.service to that day's /nix/store build, which then overrides the system's unit and
-  # survives every later update. Remove the links at each activation (every boot and switch); GNOME re-enables the
-  # current build at the next login.
-  home.activation.forgetPinnedOrca = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    run rm -f $VERBOSE_ARG "$HOME/.config/systemd/user/orca.service" \
-      "$HOME/.config/systemd/user/graphical-session.target.wants/orca.service"
-  '';
 }
