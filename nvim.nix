@@ -130,5 +130,10 @@
 
     # file manager
     plugins.oil.enable = true;
+
+    # Status line
+    plugins.lualine = {
+      enable = true;
+    };
   };
 }
