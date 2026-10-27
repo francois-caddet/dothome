@@ -83,7 +83,13 @@
      #plugins.lspsaga.enable = true;
 
     # Lean4
-    plugins.lean.enable = true;
+    plugins.lean = {
+      enable = true;
+      # infoview in a horizontal split (at the bottom by default)
+      settings.infoview.orientation = "horizontal";
+      # infoview in its own tab instead of a split, for less screen reader noise
+      # settings.infoview.separate_tab = true;
+    };
 
     plugins.lsp.enable = true;
     plugins.lsp.servers = {
