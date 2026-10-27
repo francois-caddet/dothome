@@ -81,6 +81,9 @@
     # Buggy with screenreader:
      #plugins.lspsaga.enable = true;
 
+    # Lean4
+    plugins.lean.enable = true;
+
     plugins.lsp.enable = true;
     plugins.lsp.servers = {
       bashls.enable = true;
