@@ -11,6 +11,7 @@
     viAlias = true;
     vimAlias = true;
     vimdiffAlias = true;
+    opts.showcmd = false;
     diagnostic.settings = {
       virtual_text = true;
     };
