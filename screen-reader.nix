@@ -38,13 +38,16 @@ let
   # speech-dispatcher's English symbol rules, with the decimal point left to the voice. speech-dispatcher rewrites
   # punctuation itself (SymbolsPreproc "char" in the system's speechd.conf); its rule "decimal point" has an empty
   # replacement, and symbols.c puts a space before a replacement, so "5.5" reached the voice as "5 .5", which RHVoice
-  # reads "five five". "-" means no replacement: the dot stays in place and each voice reads its own decimals ("five
-  # point five"). speech-dispatcher reads this file from ~/.config/speech-dispatcher/locale/en before the system's.
-  # The build fails if the rule ever changes.
+  # reads "five five". The rule now replaces the dot with itself, "literal" (no space added): "5.5" stays "5.5" and
+  # each voice reads its own decimals ("five point five"). Not "-": that marks the replacement as unspecified, and it
+  # is then inherited from the "base" locale's file, empty again (speech_symbols_processor_new). Traced in a private
+  # speech-dispatcher's debug log, 2026-10-31: "Version 2.0.1 costs 3.14" kept every decimal dot, other dots as
+  # before. speech-dispatcher reads this file from ~/.config/speech-dispatcher/locale/en before the system's. The
+  # build fails if the rule ever changes.
   speechdSymbolsEn = pkgs.runCommand "speechd-symbols-en.dic" { } ''
     cp ${ownedSpeechd}/share/speech-dispatcher/locale/en/symbols.dic $out
     chmod u+w $out
-    substituteInPlace $out --replace-fail $'decimal point\t\tnone\talways' $'decimal point\t-\tnone\talways'
+    substituteInPlace $out --replace-fail $'decimal point\t\tnone\talways' $'decimal point\t.\tnone\tliteral'
   '';
 
   # RHVoice's settings. At Orca's top rate RHVoice speaks max_rate times the voice's normal speed (default 2, about
