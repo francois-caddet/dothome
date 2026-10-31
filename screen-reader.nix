@@ -201,8 +201,8 @@ in
       );
     }
 
-    # Orca's two profiles: English with RHVoice in Default (the one Orca 50 always starts in), French with MBROLA in
-    # default_fr. Nix is the only source of Orca's settings (user's rule, 2026-10-31): each activation (every boot,
+    # Orca's two profiles: English in Default (the one Orca 50 always starts in), French in default_fr, both with
+    # espeak-ng. Nix is the only source of Orca's settings (user's rule, 2026-10-31): each activation (every boot,
     # every switch) erases everything under /org/gnome/orca/, then home-manager writes the keys declared here. A
     # change made in Orca's preferences is temporary: it lasts until the next boot.
     {
@@ -231,44 +231,41 @@ in
         "${pkgs.rhvoice}/libexec/speech-dispatcher-modules/sd_rhvoice";
 
       dconf.settings = lib.mkMerge [
-        # Bdl at rate 80 and pitch 5.5, chosen by ear (2026-10-31). Rate 80 sends 62 to speech-dispatcher: RHVoice at
-        # 1 + 0.62 x (3 - 1) = 2.24 times normal speed. Pitch 5.5 sends 20: 1.2 times the voice's own pitch. Family
-        # values as Orca writes them from speech-dispatcher's voice list.
+        # espeak-ng at Orca's top rate (100 sends speech-dispatcher 100, espeak-ng's 449 words a minute): the user's
+        # voices before RHVoice and MBROLA, back on 2026-10-31 because they stay clearer at that speed. RHVoice Bdl
+        # (rate 80, pitch 5.5, capitals at 10.0) and MBROLA fr4 (rate 74, pitch 5.0) were tried that day; RHVoice stays
+        # installed. Family values as Orca writes them from speech-dispatcher's voice list.
         (orcaProfile "default" {
           label = "Default";
-          synthesizer = "rhvoice";
+          synthesizer = "espeak-ng";
           voice = {
-            family-name = "Bdl";
+            family-name = "English (America)+klatt6";
             family-lang = "en";
-            family-dialect = "";
-            family-variant = "none";
-            rate = 80;
-            volume = orcaNormalVolume;
-          };
-          voices = {
-            default = { established = true; pitch = 5.5; };
-            # Chosen by ear (2026-10-31): at 7.0 some capitals, like P and B, were not heard as higher. Orca caps the
-            # pitch it sends at 9 (speechdispatcherfactory.py, _set_pitch), so this is the maximum: 1.9 times Bdl's.
-            uppercase.pitch = 10.0;
-            hyperlink.established = false;
-            system.established = false;
-          };
-        })
-        # Rate 74: espeak-ng speed 309 for MBROLA fr4, 4.88 s on a 40-word French test paragraph against 4.91 s for
-        # espeak-ng's David at Orca 100. Pitch 5.0 is neutral, as fr4 was heard; 7.4 was set for David.
-        (orcaProfile "default_fr" {
-          label = "default_fr";
-          synthesizer = "espeak-ng-mbrola";
-          voice = {
-            family-name = "french-mbrola-4";
-            family-lang = "fr";
-            family-dialect = "FR";
-            family-variant = "none";
-            rate = 74;
+            family-dialect = "US";
+            family-variant = "klatt6";
+            rate = 100;
             volume = orcaNormalVolume;
           };
           voices = {
             default = { established = true; pitch = 5.0; };
+            uppercase.pitch = 7.0;
+            hyperlink.established = false;
+            system.established = false;
+          };
+        })
+        (orcaProfile "default_fr" {
+          label = "default_fr";
+          synthesizer = "espeak-ng";
+          voice = {
+            family-name = "French (France)+David";
+            family-lang = "fr";
+            family-dialect = "FR";
+            family-variant = "David";
+            rate = 100;
+            volume = orcaNormalVolume;
+          };
+          voices = {
+            default = { established = true; pitch = 7.4; };
             uppercase.pitch = 7.0;
             hyperlink.established = false;
             system = { established = true; pitch = 6.5; };
