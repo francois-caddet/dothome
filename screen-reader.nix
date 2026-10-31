@@ -110,6 +110,13 @@ let
     };
   };
 
+  # Orca's volume for every voice type: 2.35 sends speech-dispatcher 0 (Orca sends int(15 x volume - 35)), each
+  # synthesizer's own normal level. Above it RHVoice turns on a fast limiter (hts_engine_call.cpp) that roughens the
+  # voice, and espeak-ng with MBROLA clips (amplitude = 100 + the value): at Orca's 8.0, fr4 had 4,375 clipped
+  # samples in 107,661, against 45 at normal. Heard 2026-10-31: Bdl at 8.0 matched Orca, at normal it was cleaner.
+  # Orca's own default is 10.0, the maximum, so no voice type is left without it.
+  orcaNormalVolume = 2.35;
+
   # One Orca profile as dconf settings. `name` is Orca's internal name: Orca finds the profile's folder from it (lower
   # case, "_" turned into "-", sanitize_gsettings_path), and always starts in "default" (get_starting_profile,
   # profile_manager.py). Every voice type gets the profile's voice, family and rate: Orca hands each type's family
@@ -236,9 +243,10 @@ in
             family-dialect = "";
             family-variant = "none";
             rate = 80;
+            volume = orcaNormalVolume;
           };
           voices = {
-            default = { established = true; pitch = 5.5; volume = 8.0; };
+            default = { established = true; pitch = 5.5; };
             # Chosen by ear (2026-10-31): at 7.0 some capitals, like P and B, were not heard as higher. Orca caps the
             # pitch it sends at 9 (speechdispatcherfactory.py, _set_pitch), so this is the maximum: 1.9 times Bdl's.
             uppercase.pitch = 10.0;
@@ -257,9 +265,10 @@ in
             family-dialect = "FR";
             family-variant = "none";
             rate = 74;
+            volume = orcaNormalVolume;
           };
           voices = {
-            default = { established = true; pitch = 5.0; volume = 8.0; };
+            default = { established = true; pitch = 5.0; };
             uppercase.pitch = 7.0;
             hyperlink.established = false;
             system = { established = true; pitch = 6.5; };
