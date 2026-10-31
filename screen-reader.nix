@@ -27,6 +27,26 @@ let
   # The speech server Orca talks to (its own Python part is not needed).
   speechd = pkgs.speechd;
 
+  # speech-dispatcher's unit, owned by home-manager where some speech-dispatcher already runs from Nix: the system's
+  # build on NixOS (the same file the system links), this configuration's under useNixOrca. A standalone machine
+  # with its distribution's speech-dispatcher keeps that one.
+  systemSpeechd =
+    if args ? osConfig && args.osConfig.services.speechd.enable then args.osConfig.services.speechd.package else null;
+  ownSpeechdUnit = systemSpeechd != null || cfg.useNixOrca;
+  ownedSpeechd = if systemSpeechd != null && !cfg.useNixOrca then systemSpeechd else speechd;
+
+  # speech-dispatcher's English symbol rules, with the decimal point left to the voice. speech-dispatcher rewrites
+  # punctuation itself (SymbolsPreproc "char" in the system's speechd.conf); its rule "decimal point" has an empty
+  # replacement, and symbols.c puts a space before a replacement, so "5.5" reached the voice as "5 .5", which RHVoice
+  # reads "five five". "-" means no replacement: the dot stays in place and each voice reads its own decimals ("five
+  # point five"). speech-dispatcher reads this file from ~/.config/speech-dispatcher/locale/en before the system's.
+  # The build fails if the rule ever changes.
+  speechdSymbolsEn = pkgs.runCommand "speechd-symbols-en.dic" { } ''
+    cp ${ownedSpeechd}/share/speech-dispatcher/locale/en/symbols.dic $out
+    chmod u+w $out
+    substituteInPlace $out --replace-fail $'decimal point\t\tnone\talways' $'decimal point\t-\tnone\talways'
+  '';
+
   # RHVoice's settings. At Orca's top rate RHVoice speaks max_rate times the voice's normal speed (default 2, about
   # 355 words per minute); it reads RHVoice.conf from the folder RHVOICE_CONFIG_PATH names (engine.cpp, init_params).
   rhvoiceConfig = pkgs.writeTextDir "RHVoice.conf" ''
@@ -187,8 +207,10 @@ in
         fi
       '';
 
-      # speech-dispatcher's voice modules inherit its environment. A drop-in adds to the system's unit without
-      # replacing it.
+      # speech-dispatcher's voice modules inherit its environment, and it reads that environment and looks for modules
+      # only when it starts. home-manager's switch tool (sd-switch) restarts a running unit when its unit file or a
+      # drop-in beside it changes, but only for a unit whose file is in home-manager's own folder
+      # (find_unit_file_path, then collect_overrides): hence the owned unit below, with its restart triggers.
       xdg.configFile."systemd/user/speech-dispatcher.service.d/rhvoice.conf".text = ''
         [Service]
         Environment=RHVOICE_CONFIG_PATH=${rhvoiceConfig}
@@ -199,21 +221,21 @@ in
         "${pkgs.rhvoice}/libexec/speech-dispatcher-modules/sd_rhvoice";
 
       dconf.settings = lib.mkMerge [
-        # Rate 86: RHVoice at 1 + 0.74 x (3 - 1) = 2.48 times normal speed; on a 40-word test paragraph Slt reads 449
-        # words per minute there, against 442 for espeak-ng's klatt6 at Orca 100. Family values as Orca writes them
-        # from speech-dispatcher's voice list.
+        # Bdl at rate 80 and pitch 5.5, chosen by ear (2026-10-31). Rate 80 sends 62 to speech-dispatcher: RHVoice at
+        # 1 + 0.62 x (3 - 1) = 2.24 times normal speed. Pitch 5.5 sends 20: 1.2 times the voice's own pitch. Family
+        # values as Orca writes them from speech-dispatcher's voice list.
         (orcaProfile "default" {
           label = "Default";
           synthesizer = "rhvoice";
           voice = {
-            family-name = "Slt";
+            family-name = "Bdl";
             family-lang = "en";
             family-dialect = "";
             family-variant = "none";
-            rate = 86;
+            rate = 80;
           };
           voices = {
-            default = { established = true; pitch = 5.0; volume = 8.0; };
+            default = { established = true; pitch = 5.5; volume = 8.0; };
             uppercase.pitch = 7.0;
             hyperlink.established = false;
             system.established = false;
@@ -241,12 +263,27 @@ in
       ];
     }
 
+    # speech-dispatcher's unit under the same name: ~/.config/systemd/user comes before /etc/systemd/user, and drop-ins
+    # from both folders still apply. Rewritten at each activation, so it follows every update of the build it names.
+    (lib.mkIf ownSpeechdUnit {
+      xdg.configFile."systemd/user/speech-dispatcher.service".source =
+        "${ownedSpeechd}/lib/systemd/user/speech-dispatcher.service";
+      xdg.configFile."speech-dispatcher/locale/en/symbols.dic".source = speechdSymbolsEn;
+      # What speech-dispatcher loads only at start and its unit does not name: the RHVoice module (through the link
+      # below) and the symbol file. One key in one drop-in: sd-switch merges drop-ins key by key, the later file
+      # replacing the earlier (SystemdIni::extend), so the same key in two drop-ins would hide one. systemd ignores
+      # X- keys.
+      xdg.configFile."systemd/user/speech-dispatcher.service.d/restart-triggers.conf".text = ''
+        [Unit]
+        X-Restart-Triggers=${pkgs.rhvoice} ${speechdSymbolsEn}
+      '';
+    })
+
     (lib.mkIf cfg.useNixOrca {
       home.packages = [ orca speechd ];
-      # The packages' own units (full paths to these builds); Orca's unit pulls in speech-dispatcher.socket.
+      # The packages' own units (full paths to these builds); Orca's unit pulls in speech-dispatcher.socket. The
+      # speech-dispatcher service comes from the block above.
       xdg.configFile."systemd/user/orca.service".source = "${orca}/share/systemd/user/orca.service";
-      xdg.configFile."systemd/user/speech-dispatcher.service".source =
-        "${speechd}/share/systemd/user/speech-dispatcher.service";
       xdg.configFile."systemd/user/speech-dispatcher.socket".source =
         "${speechd}/share/systemd/user/speech-dispatcher.socket";
     })
