@@ -26,6 +26,81 @@ let
   orca = pkgs.orca.override { speechd-minimal = withPython pkgs.speechd-minimal; };
   # The speech server Orca talks to (its own Python part is not needed).
   speechd = pkgs.speechd;
+
+  # RHVoice's settings. At Orca's top rate RHVoice speaks max_rate times the voice's normal speed (default 2, about
+  # 355 words per minute); it reads RHVoice.conf from the folder RHVOICE_CONFIG_PATH names (engine.cpp, init_params).
+  rhvoiceConfig = pkgs.writeTextDir "RHVoice.conf" ''
+    max_rate=3
+  '';
+
+  # Orca's settings shared by both profiles; voices and names are per profile (orcaProfile). Orca 50 reads every
+  # setting from dconf, under /org/gnome/orca/<profile>/ (gsettings_registry.py, get_settings). It reads its older
+  # file, ~/.local/share/orca/user-settings.conf, only when dconf holds no Orca key at all (migrate_all, called by
+  # orca.py at each start). Values as Orca had written them, 2026-10-31.
+  orcaShared = {
+    braille = {
+      # Orca stores the table's full path; naming the package keeps it valid across liblouis updates.
+      contraction-table = "${pkgs.liblouis}/share/liblouis/tables/en-us-g1.ctb";
+      link-indicator = "dots78";
+      progress-bar-braille-verbosity = "application";
+      rolename-style = "verbose";
+      selector-indicator = "dots78";
+      text-attributes-indicator = "none";
+      verbosity-level = "verbose";
+    };
+    chat = {
+      announce-buddy-typing = true;
+      message-verbosity = "all";
+      room-histories = true;
+      speak-room-name = true;
+      speak-room-name-last = true;
+    };
+    document.find-results-verbosity = "all";
+    keybindings = {
+      # Orca+Shift+Space cycles the profiles: modifiers 257 are Orca (1 << 8) and Shift (1), keybindings.py.
+      entries = [
+        (lib.hm.gvariant.mkDictionaryEntry [ "cycleSettingsProfileHandler" [ [ "space" "461" "257" "1" ] ] ])
+      ];
+      keyboard-layout = "desktop";
+    };
+    say-all.style = "sentence";
+    sound.progress-bar-beep-verbosity = "application";
+    speech = {
+      capitalization-style = "icon";
+      progress-bar-speech-verbosity = "application";
+      punctuation-level = "most";
+      speak-indentation-and-justification = true;
+      speech-server = "Speech Dispatcher";
+      speech-server-factory = "speechdispatcherfactory";
+      verbosity-level = "verbose";
+    };
+    typing-echo = {
+      action-keys = false;
+      alphabetic-keys = false;
+      function-keys = false;
+      key-echo = false;
+      modifier-keys = false;
+      numeric-keys = false;
+      punctuation-keys = false;
+      space = false;
+      word-echo = true;
+    };
+  };
+
+  # One Orca profile as dconf settings. `name` is Orca's internal name: Orca finds the profile's folder from it (lower
+  # case, "_" turned into "-", sanitize_gsettings_path), and always starts in "default" (get_starting_profile,
+  # profile_manager.py). Every voice type gets the profile's voice, family and rate: Orca hands each type's family
+  # name to the synthesizer as is, so a type left on an espeak-ng voice names one the synthesizer lacks, and a type
+  # with its own rate ignores the default's. `voices` holds each type's other keys.
+  orcaProfile = name: { label, synthesizer, voice, voices }:
+    let
+      dir = "org/gnome/orca/${lib.replaceStrings [ "_" ] [ "-" ] name}";
+      sections = orcaShared // {
+        metadata = { display-name = label; internal-name = name; };
+        speech = orcaShared.speech // { inherit synthesizer; };
+      } // lib.mapAttrs' (type: keys: lib.nameValuePair "voices/${type}" (voice // keys)) voices;
+    in
+    lib.mapAttrs' (section: keys: lib.nameValuePair "${dir}/${section}" keys) sections;
 in
 {
   options.fcaddet.screenReader.useNixOrca = lib.mkOption {
@@ -94,6 +169,76 @@ in
           unset orcaForgotten orcaLink orcaTarget
         ''
       );
+    }
+
+    # Orca's two profiles: English with RHVoice in Default (the one Orca 50 always starts in), French with MBROLA in
+    # default_fr. Nix is the only source of Orca's settings (user's rule, 2026-10-31): each activation (every boot,
+    # every switch) erases everything under /org/gnome/orca/, then home-manager writes the keys declared here. A
+    # change made in Orca's preferences is temporary: it lasts until the next boot.
+    {
+      # Runs where home-manager's own dconf step does, and the same way: through a private D-Bus when the activation
+      # has no session bus (at boot).
+      home.activation.orcaSettingsFromNixOnly = lib.hm.dag.entryBetween [ "dconfSettings" ] [ "installPackages" ] ''
+        if [[ -v DBUS_SESSION_BUS_ADDRESS ]]; then
+          run ${pkgs.dconf}/bin/dconf reset -f /org/gnome/orca/
+        else
+          run ${pkgs.dbus}/bin/dbus-run-session --dbus-daemon=${pkgs.dbus}/bin/dbus-daemon \
+            ${pkgs.dconf}/bin/dconf reset -f /org/gnome/orca/
+        fi
+      '';
+
+      # speech-dispatcher's voice modules inherit its environment. A drop-in adds to the system's unit without
+      # replacing it.
+      xdg.configFile."systemd/user/speech-dispatcher.service.d/rhvoice.conf".text = ''
+        [Service]
+        Environment=RHVOICE_CONFIG_PATH=${rhvoiceConfig}
+      '';
+      # speech-dispatcher also loads the modules it finds in ~/.local/libexec/speech-dispatcher-modules, as long as its
+      # speechd.conf names none (the system's names none).
+      home.file.".local/libexec/speech-dispatcher-modules/sd_rhvoice".source =
+        "${pkgs.rhvoice}/libexec/speech-dispatcher-modules/sd_rhvoice";
+
+      dconf.settings = lib.mkMerge [
+        # Rate 86: RHVoice at 1 + 0.74 x (3 - 1) = 2.48 times normal speed; on a 40-word test paragraph Slt reads 449
+        # words per minute there, against 442 for espeak-ng's klatt6 at Orca 100. Family values as Orca writes them
+        # from speech-dispatcher's voice list.
+        (orcaProfile "default" {
+          label = "Default";
+          synthesizer = "rhvoice";
+          voice = {
+            family-name = "Slt";
+            family-lang = "en";
+            family-dialect = "";
+            family-variant = "none";
+            rate = 86;
+          };
+          voices = {
+            default = { established = true; pitch = 5.0; volume = 8.0; };
+            uppercase.pitch = 7.0;
+            hyperlink.established = false;
+            system.established = false;
+          };
+        })
+        # Rate 74: espeak-ng speed 309 for MBROLA fr4, 4.88 s on a 40-word French test paragraph against 4.91 s for
+        # espeak-ng's David at Orca 100. Pitch 5.0 is neutral, as fr4 was heard; 7.4 was set for David.
+        (orcaProfile "default_fr" {
+          label = "default_fr";
+          synthesizer = "espeak-ng-mbrola";
+          voice = {
+            family-name = "french-mbrola-4";
+            family-lang = "fr";
+            family-dialect = "FR";
+            family-variant = "none";
+            rate = 74;
+          };
+          voices = {
+            default = { established = true; pitch = 5.0; volume = 8.0; };
+            uppercase.pitch = 7.0;
+            hyperlink.established = false;
+            system = { established = true; pitch = 6.5; };
+          };
+        })
+      ];
     }
 
     (lib.mkIf cfg.useNixOrca {
