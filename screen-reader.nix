@@ -239,7 +239,9 @@ in
           };
           voices = {
             default = { established = true; pitch = 5.5; volume = 8.0; };
-            uppercase.pitch = 7.0;
+            # Chosen by ear (2026-10-31): at 7.0 some capitals, like P and B, were not heard as higher. Orca caps the
+            # pitch it sends at 9 (speechdispatcherfactory.py, _set_pitch), so this is the maximum: 1.9 times Bdl's.
+            uppercase.pitch = 10.0;
             hyperlink.established = false;
             system.established = false;
           };
