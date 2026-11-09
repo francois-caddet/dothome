@@ -122,13 +122,16 @@ let
   # profile_manager.py). Every voice type gets the profile's voice, family and rate: Orca hands each type's family
   # name to the synthesizer as is, so a type left on an espeak-ng voice names one the synthesizer lacks, and a type
   # with its own rate ignores the default's. `voices` holds each type's other keys.
+  # Orca 51 reads each voice type from `voice-sets/primary/<type>/` (gsettings_registry.py, voice_set_sub_path);
+  # Orca 50 read `voices/<type>/`, and 51 has NO reader of that folder. Measured 2026-11-09: the update to 51.0 left
+  # both profiles on espeak-ng's default voice at the default rate while every declared key still sat under `voices/`.
   orcaProfile = name: { label, synthesizer, voice, voices }:
     let
       dir = "org/gnome/orca/${lib.replaceStrings [ "_" ] [ "-" ] name}";
       sections = orcaShared // {
         metadata = { display-name = label; internal-name = name; };
         speech = orcaShared.speech // { inherit synthesizer; };
-      } // lib.mapAttrs' (type: keys: lib.nameValuePair "voices/${type}" (voice // keys)) voices;
+      } // lib.mapAttrs' (type: keys: lib.nameValuePair "voice-sets/primary/${type}" (voice // keys)) voices;
     in
     lib.mapAttrs' (section: keys: lib.nameValuePair "${dir}/${section}" keys) sections;
 in
