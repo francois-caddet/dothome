@@ -95,7 +95,7 @@
     plugins.lsp.servers = {
       bashls.enable = true;
       clangd.enable = true;
-      ltex.enable = true;
+      #ltex.enable = true;
       nixd = {
         enable = true;
         settings.formatting.command = [ "nixpkgs-fmt" ];
